@@ -4,6 +4,9 @@ Parameters:
   AvailabilityZone:
     Type: String
     Default: us-east-1a
+  AmazonLinux2AMI:
+    Type: String
+    Default: ami-0b5eea76982371e91
   DbUser:
     Type: String
     Default: darth.vader
@@ -25,7 +28,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       AvailabilityZone: !Ref AvailabilityZone
-      ImageId: ami-0b5eea76982371e91
+      ImageId: !Ref AmazonLinux2AMI
       InstanceType: t2.micro
       UserData: 
         Fn::Base64:
@@ -71,7 +74,7 @@ Resources:
     DependsOn: MongoInstance
     Properties:
       AvailabilityZone: !Ref AvailabilityZone
-      ImageId: ami-0b5eea76982371e91
+      ImageId: !Ref AmazonLinux2AMI
       InstanceType: t2.micro
       UserData: 
         Fn::Base64:
