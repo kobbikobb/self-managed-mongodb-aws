@@ -1,0 +1,130 @@
+---
+Parameters:
+
+  AvailabilityZone:
+    Type: String
+    Default: us-east-1a
+  DbUser:
+    Type: String
+    Default: darth.vader
+  DbPass:
+    Type: String
+    Default: red.light.saber
+
+Resources:
+  MongoInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      ImageId: ami-0b5eea76982371e91
+      InstanceType: t2.micro
+      UserData: 
+        Fn::Base64:
+          !Sub
+            -
+              | 
+              #!/bin/bash
+              yum update -y
+
+              # Install Docker
+              amazon-linux-extras install docker -y
+              service docker start
+              systemctl enable docker
+              usermod -a -G docker ec2-user
+              chmod 666 /var/run/docker.sock
+
+              docker run -d \
+                -p 27017:27017 \
+                -e bind_ip=0.0.0.0 \
+                -e MONGO_INITDB_ROOT_USERNAME=${DbUser} \
+                -e MONGO_INITDB_ROOT_PASSWORD=${DbPass} \
+              mongo
+            -
+              DbUser:
+                !Ref DbUser
+              DbPass:
+                !Ref DbPass
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref MongoSecurityGroup
+      Tags:
+        -
+          Key: Name
+          Value: Mongo Instance
+
+  WebInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: MongoInstance
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      ImageId: ami-0b5eea76982371e91
+      InstanceType: t2.micro
+      UserData: 
+        Fn::Base64:
+          !Sub
+            - 
+              | 
+              #!/bin/bash
+              yum update -y
+
+              # Install Docker
+              amazon-linux-extras install docker -y
+              service docker start
+              systemctl enable docker
+              usermod -a -G docker ec2-user
+              chmod 666 /var/run/docker.sock
+
+              docker run -d \
+                -p 80:8081 \
+                -e ME_CONFIG_MONGODB_URL=mongodb://${DbUser}:${DbPass}@${MongoInstanceIp}:27017/db?authSource=admin \
+              mongo-express
+            -
+              MongoInstanceIp:
+                !GetAtt MongoInstance.PrivateDnsName
+              DbUser:
+                !Ref DbUser
+              DbPass:
+                !Ref DbPass
+          
+
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+      Tags:
+        -
+          Key: Name
+          Value: Web Instance
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        ToPort: 22
+        IpProtocol: tcp
+
+  MongoSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Expose MongoDb
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 27017
+          ToPort: 27017
+          IpProtocol: tcp
+
+  HTTPSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: Enable standard web access
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+
+
+
+
