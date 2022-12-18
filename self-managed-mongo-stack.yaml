@@ -89,10 +89,10 @@ Resources:
 
               docker run -d \
                 -p 80:8081 \
-                -e ME_CONFIG_MONGODB_URL=mongodb://${DbUser}:${DbPass}@${MongoInstanceIp}:27017/db?authSource=admin \
+                -e ME_CONFIG_MONGODB_URL=mongodb://${DbUser}:${DbPass}@${MongoDnsName}:27017/db?authSource=admin \
               mongo-express
             -
-              MongoInstanceIp:
+              MongoDnsName:
                 !GetAtt MongoInstance.PrivateDnsName
               DbUser:
                 !Ref DbUser
