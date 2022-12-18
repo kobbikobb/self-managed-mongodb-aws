@@ -1,1 +1,1 @@
-aws cloudformation update-stack --stack-name ec2-docker-compose --template-body file://ec2-stack.yaml --profile kobbikobb --region us-east-1
+aws cloudformation update-stack --stack-name self-managed-mongo --template-body file://self-managed-mongo-stack.yaml --region us-east-1

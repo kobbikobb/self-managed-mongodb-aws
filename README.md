@@ -16,7 +16,10 @@ https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec
 ## List profiles
  aws configure list-profiles
 
-## user Profile for a aws command
+## Select profile
+export AWS_PROFILE=user1
+
+## use a Profile for a specific aws command
 --profile profile-name
 
 ## Make a sh file executable

@@ -10,6 +10,15 @@ Parameters:
   DbPass:
     Type: String
     Default: red.light.saber
+  InstallDocker:
+    Type: String
+    Default: 
+      |
+        amazon-linux-extras install docker -y
+        service docker start
+        systemctl enable docker
+        usermod -a -G docker ec2-user
+        chmod 666 /var/run/docker.sock
 
 Resources:
   MongoInstance:
@@ -26,24 +35,29 @@ Resources:
               #!/bin/bash
               yum update -y
 
-              # Install Docker
-              amazon-linux-extras install docker -y
-              service docker start
-              systemctl enable docker
-              usermod -a -G docker ec2-user
-              chmod 666 /var/run/docker.sock
+              # Mount Drive
+              mkdir /data
+              mkfs -t xfs /dev/xvdh
+              mount /dev/xvdh /data
+
+              # You can verify the mount is working with lsblk
+
+              ${InstallDocker}
 
               docker run -d \
                 -p 27017:27017 \
-                -e bind_ip=0.0.0.0 \
+                -e bind_ip=0.0.0.0 \ # Make mongo available externally
                 -e MONGO_INITDB_ROOT_USERNAME=${DbUser} \
                 -e MONGO_INITDB_ROOT_PASSWORD=${DbPass} \
+                --volume=/data:/data/db \
               mongo
             -
               DbUser:
                 !Ref DbUser
               DbPass:
                 !Ref DbPass
+              InstallDocker:
+                !Ref InstallDocker
       SecurityGroups:
         - !Ref SSHSecurityGroup
         - !Ref MongoSecurityGroup
@@ -67,12 +81,7 @@ Resources:
               #!/bin/bash
               yum update -y
 
-              # Install Docker
-              amazon-linux-extras install docker -y
-              service docker start
-              systemctl enable docker
-              usermod -a -G docker ec2-user
-              chmod 666 /var/run/docker.sock
+              ${InstallDocker}
 
               docker run -d \
                 -p 80:8081 \
@@ -85,8 +94,8 @@ Resources:
                 !Ref DbUser
               DbPass:
                 !Ref DbPass
-          
-
+              InstallDocker:
+                !Ref InstallDocker
       SecurityGroups:
         - !Ref SSHSecurityGroup
         - !Ref HTTPSecurityGroup
@@ -125,6 +134,21 @@ Resources:
           ToPort: 80
           IpProtocol: tcp
 
+  MongoVolume:
+    Type: AWS::EC2::Volume
+    Properties: 
+      AvailabilityZone: !Ref AvailabilityZone
+      Size: 4
+      VolumeType: gp2
 
+  MongoMountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: !Ref MongoInstance
+      VolumeId: !Ref MongoVolume
+      Device: /dev/xvdh
 
-
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref WebInstance
