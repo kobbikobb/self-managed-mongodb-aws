@@ -47,12 +47,13 @@ Resources:
 
               ${InstallDocker}
 
+              # bind_ip=0.0.0.0: Make mongo available externally
               docker run -d \
                 -p 27017:27017 \
-                -e bind_ip=0.0.0.0 \ # Make mongo available externally
+                -e bind_ip=0.0.0.0 \
                 -e MONGO_INITDB_ROOT_USERNAME=${DbUser} \
                 -e MONGO_INITDB_ROOT_PASSWORD=${DbPass} \
-                --volume=/data:/data/db \
+                -v=/data:/data/db \
               mongo
             -
               DbUser:
