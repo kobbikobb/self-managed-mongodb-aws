@@ -7,6 +7,8 @@ This repository contains scripts to create:
 - Mounted Volume for Mongo
 - Elastic IP
 
+The scripts will create resources in: us-east-1
+
 # How to run it
 - export AWS_PROFILE=user1 # The name of the profile you want to use
 - ./create-stack.sh
